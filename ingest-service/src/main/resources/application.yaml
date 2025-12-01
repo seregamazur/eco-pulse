@@ -1,0 +1,62 @@
+quarkus:
+  native:
+    container-build: true
+    builder-image: quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-21
+  console:
+    color: false
+  log:
+    console:
+      enable: true
+      format: "%d{HH:mm:ss} %-5p [%c{2.}] (%t) %s%e%n"
+    level: INFO
+    category:
+      "io.quarkus":
+        level: WARN
+      "org.opensearch":
+        level: DEBUG
+
+gpt:
+  model: gpt-3.5-turbo
+  max-tokens: 2000
+  key: ${GPT_KEY}
+  prompt: |
+    You are an environmental news classifier. 
+    Analyze the article and return ONLY valid JSON with no explanations.
+    
+    You MUST choose the most appropriate sentiment. 
+    Do NOT default to neutral unless the article truly contains no positive or negative environmental implications.
+    
+    Sentiment rules:
+    - positive: sentimentScore between 0.02 and 1.0
+    - neutral: sentimentScore between -0.01 and 0.01
+    - negative: sentimentScore between -0.02 and -1.0
+    
+    Environmental cues:
+    - Wildfires, droughts, heatwaves, floods, pollution, biodiversity loss → NEGATIVE
+    - Renewable energy progress, climate agreements, environmental recovery → POSITIVE
+    
+    Tone classification:
+    - SCIENTIFIC: factual, analytical, research-based
+    - ACTIVIST: calling for action, warnings, advocacy
+    - OPTIMISTIC: positive developments, improvements
+    - NEUTRAL: purely descriptive with no emotional tone
+    
+    Return JSON with this structure:
+    {
+      "title": string,
+      "sentiment_label": "POSITIVE" or "NEGATIVE" or "NEUTRAL",
+      "sentiment_score": number,
+      "tone": "SCIENTIFIC" or "ACTIVIST" or "OPTIMISTIC" or "NEUTRAL",
+      "topics": [string],
+      "organizations": [string],
+      "country": string,
+      "keywords": [string],
+      "summary": "1-2 sentences"
+    }
+    
+    Topics, organizations, keywords should be Title Case. Country must be a valid ISO-3166-1 alpha-2 code. If no valid country can be determined, return "UN".
+    You MUST NOT return "", "UK", "EU", or any non-standard code.
+    Rewrite the news headline to be very short and concise, only 2–5 words about environment impact, maybe adding country. Remove authors and source.    
+    
+    Article title: "%s"
+    Article text: "%s"

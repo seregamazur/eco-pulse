@@ -1,0 +1,16 @@
+quarkus:
+  s3:
+    endpoint-override: http://localhost:4566
+    path-style-access: true
+    aws:
+      credentials:
+        type: static
+        static-provider:
+          access-key-id: ${AWS_KEY}
+          secret-access-key: ${AWS_SECRET}
+  opensearch:
+    hosts: "localhost"
+    protocol: "http"
+    port: 9200
+bucket:
+  name: ${BUCKET}

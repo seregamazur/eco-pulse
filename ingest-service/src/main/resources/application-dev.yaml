@@ -1,0 +1,19 @@
+quarkus:
+  s3:
+    devservices:
+      enabled: false
+    path-style-access: false
+    aws:
+      region: eu-central-1
+      credentials:
+        type: static
+        static-provider:
+          access-key-id: ${AWS_KEY}
+          secret-access-key: ${AWS_SECRET}
+  opensearch:
+    hosts: ${OPENSEARCH_HOST}
+    protocol: https
+    port: 443
+bucket:
+  name: ${BUCKET}
+

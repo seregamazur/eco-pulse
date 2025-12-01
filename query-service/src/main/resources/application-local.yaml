@@ -1,0 +1,25 @@
+quarkus:
+  opensearch:
+    hosts: "localhost"
+    protocol: "http"
+    port: 9200
+  console:
+    color: false
+  log:
+    console:
+      enable: true
+      format: "%d{HH:mm:ss} %-5p [%c{2.}] (%t) %s%e%n"
+    level: INFO
+    category:
+      "io.quarkus":
+        level: WARN
+      "org.opensearch":
+        level: DEBUG
+
+firebase:
+  project:
+    number: 522383639167
+  web:
+    appId: 1:522383639167:web:168e0cdc9b4f12206bb54a
+  appcheck:
+    jwks: https://firebaseappcheck.googleapis.com/v1/jwks
