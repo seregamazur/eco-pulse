@@ -1,4 +1,4 @@
-package com.seregamazur.pulse.pipeline;
+package com.seregamazur.pulse.pipeline.backfill;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -12,21 +12,20 @@ import com.seregamazur.pulse.reading.s3.S3FileService;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
-public class Pipeline {
+@Slf4j
+public class BackfillPipeline {
 
     @Inject
-    S3FileService s3;
+    private S3FileService s3;
 
     @Inject
-    RawNewsCsvParser newsParser;
-
-    @Inject
-    Processor processor;
+    private Processor processor;
 
     public CompletableFuture<List<IndexResult>> run(ExecutorService executor) {
-        return s3.listTodayCsvFiles()
+        return s3.listCsvFiles()
             .thenCompose(files -> processFiles(files, executor));
     }
 
@@ -46,7 +45,7 @@ public class Pipeline {
     private CompletableFuture<List<IndexResult>> processSingleFile(String key, ExecutorService executor) {
         return s3.downloadFile(key)
             //parse csv in virtual threads
-            .thenApplyAsync(bytes -> newsParser.parseFromS3Object(key, bytes), executor)
+            .thenApplyAsync(bytes -> RawNewsCsvParser.parseFromS3Object(key, bytes), executor)
             //enrich and index in virtual threads
             .thenCompose(news -> processRawNews(news, executor));
     }
@@ -60,6 +59,10 @@ public class Pipeline {
             .thenApply(v -> futureResult.stream()
                 .map(CompletableFuture::join)
                 .toList()
-            );
+            )
+            .exceptionally(e -> {
+                log.error("Failed to process news", e);
+                return null;
+            });
     }
 }

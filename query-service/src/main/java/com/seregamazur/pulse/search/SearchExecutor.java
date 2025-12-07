@@ -24,12 +24,4 @@ public class SearchExecutor {
         }
     }
 
-    public <T> SearchResponse<T> exec(SearchRequest request, Class<T> clazz) {
-        try {
-            return client.search(request, clazz);
-        } catch (IOException e) {
-            throw new OpenSearchResultException("OpenSearch search error", e);
-        }
-    }
-
 }

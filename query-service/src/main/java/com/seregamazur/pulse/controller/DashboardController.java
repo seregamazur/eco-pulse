@@ -3,6 +3,8 @@ package com.seregamazur.pulse.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+
 import com.seregamazur.pulse.dto.DataForPeriodRequest;
 import com.seregamazur.pulse.dto.geo.GeoMapChart;
 import com.seregamazur.pulse.dto.sentiment.AverageSentiment;
@@ -12,6 +14,7 @@ import com.seregamazur.pulse.dto.topics.TopicsChart;
 import com.seregamazur.pulse.dto.topics.TopicsOverTime;
 import com.seregamazur.pulse.service.NewsAnalyticsService;
 
+import io.smallrye.faulttolerance.api.RateLimit;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
@@ -19,7 +22,9 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 
 @Path("/api/charts")
-public class ChartController {
+@RateLimit
+@CircuitBreaker
+public class DashboardController {
 
     @Inject
     NewsAnalyticsService chartService;

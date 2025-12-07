@@ -1,6 +1,5 @@
 package com.seregamazur.pulse.reading.s3;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -8,6 +7,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -17,22 +17,27 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @ApplicationScoped
+@Slf4j
 public class S3FileService {
 
     @Inject
-    S3AsyncClient s3;
+    private S3AsyncClient s3;
 
     @ConfigProperty(name = "bucket.name")
     String bucketName;
 
-    public CompletableFuture<List<String>> listTodayCsvFiles() {
+    public CompletableFuture<List<String>> listCsvFiles() {
         var s3Request = ListObjectsV2Request.builder()
             .bucket(bucketName)
             .build();
         S3AsyncObjectsCollector collector = new S3AsyncObjectsCollector();
         s3.listObjectsV2Paginator(s3Request).subscribe(collector);
 
-        return collector.future().thenApply(this::filterTodayCsv);
+        return collector.future()
+            .thenApply(this::filterCsv).exceptionally(e -> {
+                log.error("Failed to get list of csv files from S3", e);
+                return null;
+            });
     }
 
     public CompletableFuture<ResponseBytes<GetObjectResponse>> downloadFile(String key) {
@@ -41,22 +46,11 @@ public class S3FileService {
             AsyncResponseTransformer.toBytes());
     }
 
-    private List<String> filterTodayCsv(List<S3Object> s3Objects) {
+    private List<String> filterCsv(List<S3Object> s3Objects) {
         return s3Objects.stream()
             .map(S3Object::key)
             .filter(o -> o.endsWith(".csv"))
-            .filter(this::isTodaysCsv)
             .toList();
     }
 
-    private boolean isTodaysCsv(String filename) {
-        LocalDate today = LocalDate.now();
-        int month = today.getMonthValue();
-        int day = today.getDayOfMonth();
-        String fname = filename.substring(filename.lastIndexOf("/") + 1);
-        String[] parts = fname.split("-|\\.");
-        int fileMonth = Integer.parseInt(parts[1]);
-        int fileDay = Integer.parseInt(parts[2]);
-        return fileMonth == month && fileDay == day;
-    }
 }

@@ -1,4 +1,8 @@
 quarkus:
+  http:
+    cors:
+      enabled: true
+      origins: "*"
   opensearch:
     hosts: "localhost"
     protocol: "http"

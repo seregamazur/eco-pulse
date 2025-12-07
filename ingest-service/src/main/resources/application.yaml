@@ -15,9 +15,12 @@ quarkus:
       "org.opensearch":
         level: DEBUG
 
+guardian:
+  key: ${GUARDIAN_KEY}
+
 gpt:
   model: gpt-3.5-turbo
-  max-tokens: 2000
+  max-tokens: 500
   key: ${GPT_KEY}
   prompt: |
     You are an environmental news classifier. 
@@ -35,26 +38,39 @@ gpt:
     - Wildfires, droughts, heatwaves, floods, pollution, biodiversity loss → NEGATIVE
     - Renewable energy progress, climate agreements, environmental recovery → POSITIVE
     
-    Tone classification:
+    Tone classification ENUM:
     - SCIENTIFIC: factual, analytical, research-based
     - ACTIVIST: calling for action, warnings, advocacy
-    - OPTIMISTIC: positive developments, improvements
-    - NEUTRAL: purely descriptive with no emotional tone
+    - DESCRIPTIVE: Simple reporting of facts, no strong emotional or action tone.
+    
+    Topic Classification ENUM (Choose 1 or 2 PRIMARY topics):
+    - CLIMATE_CHANGE
+    - RENEWABLE_ENERGY
+    - FOSSIL_FUELS
+    - AIR_POLLUTION
+    - WATER_POLLUTION
+    - BIODIVERSITY_LAND
+    - WASTE_RECYCLING
+    - EXTREME_EVENTS
+    - SOCIAL_RISKS (e.g., labor, community, justice issues)
+    - PUBLIC_HEALTH
+    - FINES_SANCTIONS
+    - OTHER
     
     Return JSON with this structure:
     {
       "title": string,
       "sentiment_label": "POSITIVE" or "NEGATIVE" or "NEUTRAL",
       "sentiment_score": number,
-      "tone": "SCIENTIFIC" or "ACTIVIST" or "OPTIMISTIC" or "NEUTRAL",
-      "topics": [string],
+      "tone": "SCIENTIFIC" or "ACTIVIST" or "DESCRIPTIVE",
+      "topics": [Topic ENUM] // MUST be selected from the Topic Classification ENUM in UPPERCASE. Max 2 elements.
       "organizations": [string],
       "country": string,
       "keywords": [string],
       "summary": "1-2 sentences"
     }
     
-    Topics, organizations, keywords should be Title Case. Country must be a valid ISO-3166-1 alpha-2 code. If no valid country can be determined, return "UN".
+    Organizations and keywords should be Title Case. Country must be a valid ISO-3166-1 alpha-2 code. If no valid country can be determined, return "UN".
     You MUST NOT return "", "UK", "EU", or any non-standard code.
     Rewrite the news headline to be very short and concise, only 2–5 words about environment impact, maybe adding country. Remove authors and source.    
     

@@ -20,7 +20,7 @@ public class EnrichedNewsDocument {
     @JsonProperty("sentiment_score")
     private float sentimentScore;
     private Tone tone;
-    private List<KeywordValue> topics;
+    private List<Topic> topics;
     private String country;
     private List<KeywordValue> organizations;
     private List<KeywordValue> keywords;
@@ -34,8 +34,7 @@ public class EnrichedNewsDocument {
 enum Tone {
     SCIENTIFIC,
     ACTIVIST,
-    NEUTRAL,
-    OPTIMISTIC
+    DESCRIPTIVE
 }
 
 enum SentimentLabel {

@@ -22,17 +22,17 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class FirebaseTokenService {
 
     @ConfigProperty(name = "firebase.project.number")
-    String projectNumber;
+    private String projectNumber;
 
     @ConfigProperty(name = "firebase.web.appId")
-    String appId;
+    private String appId;
 
     @ConfigProperty(name = "firebase.appcheck.jwks")
-    String jwksUrl;
+    private String jwksUrl;
 
     public void verify(String token) {
         if (token == null || token.isBlank()) {
-            throw new RuntimeException("Missing App Check token. Should not start application...");
+            throw new RuntimeException("Missing App Check token");
         }
 
         try {

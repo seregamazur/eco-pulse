@@ -11,10 +11,9 @@ import java.util.stream.Collectors;
 
 import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch._types.aggregations.Aggregate;
-import org.opensearch.client.opensearch._types.aggregations.Aggregation;
 import org.opensearch.client.opensearch._types.aggregations.Buckets;
+import org.opensearch.client.opensearch._types.aggregations.FieldDateMath;
 import org.opensearch.client.opensearch._types.aggregations.MultiBucketAggregateBase;
-import org.opensearch.client.opensearch._types.aggregations.SingleBucketAggregateBase;
 import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.SearchResponse;
@@ -25,13 +24,13 @@ import com.seregamazur.pulse.dto.geo.GeoMapChart;
 import com.seregamazur.pulse.dto.sentiment.AverageSentiment;
 import com.seregamazur.pulse.dto.today.TodayNews;
 import com.seregamazur.pulse.dto.tone.Tone;
+import com.seregamazur.pulse.dto.topics.Topic;
 import com.seregamazur.pulse.dto.topics.TopicsChart;
 import com.seregamazur.pulse.dto.topics.TopicsOverTime;
 import com.seregamazur.pulse.search.SearchExecutor;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.json.JsonString;
 
 @ApplicationScoped
 public class NewsAnalyticsService {
@@ -44,14 +43,18 @@ public class NewsAnalyticsService {
     private static final String AGG_SENTIMENT_DIST = "sentiment_dist";
     private static final String AGG_AVG_SCORE = "avg_score";
     private static final String AGG_BY_COUNTRY = "by_country";
-    private static final String AGG_TOPICS_NESTED = "topics_nested";
-    private static final String AGG_TOPICS_KEY = "topics_by_key";
-    private static final String AGG_RAW_TOPIC = "raw_topic";
+    private static final String AGG_TOPICS_BY_DATE = "topics_by_date";
 
     public List<AverageSentiment> sentimentTrendsOverTime(LocalDate start, LocalDate end, Period period) {
         SearchRequest req = buildBaseSearch(start, end)
             .aggregations(AGG_BY_DATE, a -> a
-                .dateHistogram(d -> d.field("date").calendarInterval(period.interval()).minDocCount(0))
+                .dateHistogram(d -> d.field("date").calendarInterval(period.interval())
+                    //if no results for date, we will return date + empty result instead of no data at all
+                    .minDocCount(0)
+                    .extendedBounds(bounds -> bounds
+                        .min(FieldDateMath.of(m -> m.expr(start.toString())))
+                        .max(FieldDateMath.of(m -> m.expr(end.toString())))
+                    ))
                 .aggregations(AGG_AVG_SCORE, ag -> ag.avg(c -> c.field("sentiment_score")))
                 .aggregations(AGG_SENTIMENT_DIST, s -> s.terms(v -> v.field("sentiment_label")))
             )
@@ -77,20 +80,17 @@ public class NewsAnalyticsService {
     }
 
     public TopicsChart topTopicsOvertime(LocalDate start, LocalDate end, Period period) {
-        Aggregation topicsKeyAndRawValues = Aggregation.of(a -> a
-            .nested(n -> n.path("topics"))
-            .aggregations(AGG_TOPICS_KEY, sub -> sub
-                .terms(t -> t.field("topics.key").size(10))
-                .aggregations(AGG_RAW_TOPIC, subSub -> subSub.topHits(th ->
-                    th.size(1).source(s -> s.filter(f -> f.includes("topics.raw")))))
-            ));
-
         SearchRequest req = buildBaseSearch(start, end)
             .aggregations(AGG_BY_DATE, a -> a.dateHistogram(d -> d
                 .field("date")
                 .calendarInterval(period.interval())
-                .minDocCount(0)))
-            .aggregations(AGG_TOPICS_NESTED, topicsKeyAndRawValues)
+                //if no results for date, we will return date + empty result instead of no data at all
+                .minDocCount(0)
+                .extendedBounds(bounds -> bounds
+                    .min(FieldDateMath.of(m -> m.expr(start.toString())))
+                    .max(FieldDateMath.of(m -> m.expr(end.toString())))
+                ))
+            .aggregations(AGG_TOPICS_BY_DATE, sub -> sub.terms(v -> v.field("topics"))))
             .build();
 
         SearchResponse<JsonData> resp = searchExecutor.exec(req);
@@ -101,54 +101,40 @@ public class NewsAnalyticsService {
             .map(Buckets::array)
             .map(arr -> arr.stream().collect(Collectors.toMap(
                 dates -> parseDateKey(dates.keyAsString()),
-                dates -> dates.aggregations().get(AGG_TOPICS_NESTED)
-                    .nested()
-                    .aggregations().get(AGG_TOPICS_KEY)
-                    .sterms().buckets().array()
-                    .stream()
-                    .map(bucket -> {
-                        long count = bucket.docCount();
-                        Map rawJson = bucket.aggregations().get(AGG_RAW_TOPIC)
-                            .topHits().hits().hits().get(0).source().to(Map.class);
-                        JsonString raw = (JsonString) rawJson.get("raw");
-                        String rawValue = raw.getString();
-                        return new TopicsOverTime(rawValue, count);
-                    }).toList())))
+                dates -> {
+                    if (dates.aggregations().isEmpty()) {
+                        return List.of(new TopicsOverTime(null, 0L));
+                    }
+                    return dates.aggregations().get(AGG_TOPICS_BY_DATE)
+                        .sterms().buckets().array()
+                        .stream()
+                        .map(bucket -> {
+                            long count = bucket.docCount();
+                            Topic topic = Topic.valueOf(bucket.key());
+                            return new TopicsOverTime(topic.getRaw(), count);
+                        }).toList();
+                })))
             .orElse(Collections.emptyMap());
         return new TopicsChart(result);
     }
 
     public List<TopicsOverTime> topTopics(LocalDate start, LocalDate end, Period period) {
-        Aggregation topicsKeyAndRawValues = Aggregation.of(a -> a
-            .nested(n -> n.path("topics"))
-            .aggregations(AGG_TOPICS_KEY, sub -> sub
-                .terms(t -> t.field("topics.key").size(10))
-                .aggregations(AGG_RAW_TOPIC, subSub -> subSub.topHits(th ->
-                    th.size(1).source(s -> s.filter(f -> f.includes("topics.raw")))))
-            ));
-
         SearchRequest req = buildBaseSearch(start, end)
-            .aggregations(AGG_TOPICS_NESTED, topicsKeyAndRawValues)
+            .aggregations(AGG_TOPICS_BY_DATE, sub -> sub.terms(v -> v.field("topics")))
             .build();
 
         SearchResponse<JsonData> resp = searchExecutor.exec(req);
         var aggs = resp.aggregations();
 
-        return Optional.ofNullable(aggs.get(AGG_TOPICS_NESTED))
-            .map(Aggregate::nested)
-            .map(SingleBucketAggregateBase::aggregations)
-            .map(e -> e.get(AGG_TOPICS_KEY))
+        return Optional.ofNullable(aggs.get(AGG_TOPICS_BY_DATE))
             .map(Aggregate::sterms)
             .map(MultiBucketAggregateBase::buckets)
             .map(Buckets::array)
             .map(arr -> arr.stream()
                 .map(bucket -> {
                     long count = bucket.docCount();
-                    Map rawJson = bucket.aggregations().get(AGG_RAW_TOPIC)
-                        .topHits().hits().hits().get(0).source().to(Map.class);
-                    JsonString raw = (JsonString) rawJson.get("raw");
-                    String rawValue = raw.getString();
-                    return new TopicsOverTime(rawValue, count);
+                    Topic topic = Topic.valueOf(bucket.key());
+                    return new TopicsOverTime(topic.getRaw(), count);
                 }).toList()).orElse(Collections.emptyList());
     }
 
@@ -259,7 +245,7 @@ public class NewsAnalyticsService {
         try {
             return Tone.valueOf(key.toUpperCase());
         } catch (IllegalArgumentException e) {
-            return Tone.NEUTRAL;
+            return Tone.DESCRIPTIVE;
         }
     }
 

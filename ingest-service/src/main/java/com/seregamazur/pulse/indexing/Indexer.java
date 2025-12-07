@@ -18,11 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Indexer {
 
     @Inject
-    OpenSearchClient client;
-
-    public Indexer(OpenSearchClient osClient) {
-        this.client = osClient;
-    }
+    private OpenSearchClient client;
 
     @PostConstruct
     public void init() throws Exception {
@@ -47,12 +43,7 @@ public class Indexer {
                     .properties("country", p -> p.keyword(k -> k))
                     .properties("sentiment_score", p -> p.float_(n -> n))
                     .properties("summary", p -> p.text(t -> t))
-                    .properties("topics", p -> p
-                        .nested(n -> n
-                            .properties("key", k -> k.keyword(kk -> kk.normalizer("lowercase_normalizer")))
-                            .properties("raw", r -> r.keyword(kk -> kk))
-                        )
-                    )
+                    .properties("topics", p -> p.keyword(k -> k))
                     .properties("organizations", p -> p
                         .nested(n -> n
                             .properties("key", k -> k.keyword(kk -> kk.normalizer("lowercase_normalizer")))
@@ -81,7 +72,7 @@ public class Indexer {
             client.index(req);
             log.info("Successfully indexed document!");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("An exception occurred when trying to index document:" + doc.getTitle(), e);
         }
     }
 

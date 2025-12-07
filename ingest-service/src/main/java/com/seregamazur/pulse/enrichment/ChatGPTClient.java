@@ -17,29 +17,29 @@ import jakarta.inject.Inject;
 public class ChatGPTClient {
 
     @Inject
-    OpenAIClient aiClient;
+    private OpenAIClient aiClient;
 
     @Inject
     @ConfigProperty(name = "gpt.prompt")
-    String prompt;
+    private String prompt;
 
     @Inject
     @ConfigProperty(name = "gpt.key")
-    String key;
+    private String key;
 
     @Inject
     @ConfigProperty(name = "gpt.model")
-    String model;
+    private String model;
 
     @Inject
     @ConfigProperty(name = "gpt.max-tokens")
-    int maxTokens;
+    private int maxOutputTokens;
 
     public @NotNull ChatCompletion getChatAnalysisResponse(RawNews rawNews) {
         ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
             .model(model)
             .addUserMessage(prompt.formatted(rawNews.title(), rawNews.text()))
-            .maxTokens(maxTokens)
+            .maxTokens(maxOutputTokens)
             .temperature(0.0)
             .build();
 

@@ -4,7 +4,6 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.seregamazur.pulse.enrichment.ChatGPTClient;
 import com.seregamazur.pulse.indexing.model.EnrichedNewsDocument;
@@ -13,17 +12,20 @@ import com.seregamazur.pulse.reading.model.RawNews;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @ApplicationScoped
+@Slf4j
 public class Processor {
 
     @Inject
-    ChatGPTClient chatGPTClient;
+    private ChatGPTClient chatGPTClient;
 
     @Inject
-    Indexer indexService;
+    private Indexer indexService;
 
-    ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    @Inject
+    private ObjectMapper mapper;
 
     public IndexResult enrichAndIndex(RawNews raw) {
         try {
@@ -31,7 +33,7 @@ public class Processor {
             indexService.index(doc);
             return IndexResult.ok(raw.title());
         } catch (Exception e) {
-            System.err.println("Error processing: " + raw.title());
+            log.error("Error processing: {}", raw.title());
             return IndexResult.fail(raw.title(), e);
         }
     }
@@ -47,7 +49,7 @@ public class Processor {
             enrichedNewsDocument.setIngestDate(LocalDate.now());
             return enrichedNewsDocument;
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("An exception occurred when trying to parse ChatGPT response!", e);
         }
     }
 }

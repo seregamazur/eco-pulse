@@ -1,5 +1,22 @@
 quarkus:
+  fault-tolerance:
+    com.seregamazur.pulse.controller.DashboardController:
+      rate-limit:
+        enabled: true
+        value: 50
+        window: 60
+        time-unit: SECONDS
+      circuitbreaker:
+        request-volume: 10
+        failure-ratio: 0.5
+        delay: 5
+        delay-unit: SECONDS
   http:
+    record-request-start-time: true
+    access-log:
+      pattern: "%h %r %s %t %Dms"
+      enabled: true
+    host: 0.0.0.0
     route-display: true
   native:
     container-build: true
@@ -16,6 +33,8 @@ quarkus:
         level: WARN
       "org.opensearch":
         level: DEBUG
+      "io.quarkus.http.access-log":
+        level: INFO
 
 firebase:
   project:

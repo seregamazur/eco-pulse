@@ -19,28 +19,34 @@ public class OpenSearchClientConfig {
 
     @Inject
     @ConfigProperty(name = "quarkus.opensearch.hosts")
-    String host;
+    private String host;
 
     @Inject
     @ConfigProperty(name = "quarkus.opensearch.protocol")
-    String protocol;
+    private String protocol;
 
     @Inject
     @ConfigProperty(name = "quarkus.opensearch.port")
-    int port;
+    private int port;
 
     @Produces
+    @Singleton
     public OpenSearchClient openSearchClient() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        var jsonpMapper = new JacksonJsonpMapper(mapper);
+        var jsonpMapper = new JacksonJsonpMapper(objectMapper());
 
         var transport = ApacheHttpClient5TransportBuilder.builder(new HttpHost(protocol, host, port))
             .setMapper(jsonpMapper)
             .build();
 
         return new OpenSearchClient(transport);
+    }
+
+    @Produces
+    @Singleton
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
     }
 }

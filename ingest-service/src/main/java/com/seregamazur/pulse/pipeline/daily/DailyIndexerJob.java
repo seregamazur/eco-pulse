@@ -1,4 +1,4 @@
-package com.seregamazur.pulse.pipeline;
+package com.seregamazur.pulse.pipeline.daily;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -15,9 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 @QuarkusMain
 @ApplicationScoped
 @Slf4j
-public class IndexerJob implements QuarkusApplication {
+public class DailyIndexerJob implements QuarkusApplication {
     @Inject
-    Pipeline pipeline;
+    private DailyPipeline pipeline;
 
     @Override
     public int run(String... args) {
@@ -42,6 +42,6 @@ public class IndexerJob implements QuarkusApplication {
     }
 
     public static void main(String... args) {
-        Quarkus.run(IndexerJob.class, args);
+        Quarkus.run(DailyIndexerJob.class, args);
     }
 }

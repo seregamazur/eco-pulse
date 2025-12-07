@@ -6,12 +6,12 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class KeywordValue {
-    private String indexKey;
-    private String rawKey;
+    private String key;
+    private String raw;
 
     public KeywordValue(String rawKey) {
-        this.rawKey = rawKey;
-        this.indexKey = rawKey;
+        this.raw = rawKey;
+        this.key = rawKey;
     }
 
 }

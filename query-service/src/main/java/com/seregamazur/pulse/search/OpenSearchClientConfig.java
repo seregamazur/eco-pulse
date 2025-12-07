@@ -19,15 +19,15 @@ public class OpenSearchClientConfig {
 
     @Inject
     @ConfigProperty(name = "quarkus.opensearch.hosts")
-    String host;
+    private String host;
 
     @Inject
     @ConfigProperty(name = "quarkus.opensearch.protocol")
-    String protocol;
+    private String protocol;
 
     @Inject
     @ConfigProperty(name = "quarkus.opensearch.port")
-    int port;
+    private int port;
 
     @Produces
     public OpenSearchClient openSearchClient() {

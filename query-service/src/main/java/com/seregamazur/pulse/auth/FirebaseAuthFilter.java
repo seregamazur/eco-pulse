@@ -1,5 +1,7 @@
 package com.seregamazur.pulse.auth;
 
+import com.seregamazur.pulse.exception.ErrorDto;
+
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -12,7 +14,7 @@ public class FirebaseAuthFilter implements ContainerRequestFilter {
     private static final String APP_CHECK_HEADER_NAME = "X-Firebase-AppCheck";
 
     @Inject
-    FirebaseTokenService tokenService;
+    private FirebaseTokenService tokenService;
 
     @Override
     public void filter(ContainerRequestContext ctx) {
@@ -20,7 +22,7 @@ public class FirebaseAuthFilter implements ContainerRequestFilter {
 
         if (token == null) {
             ctx.abortWith(Response.status(Response.Status.UNAUTHORIZED)
-                .entity("Missing App Check token")
+                .entity(new ErrorDto("Missing App Check token"))
                 .build());
         }
 
@@ -28,7 +30,7 @@ public class FirebaseAuthFilter implements ContainerRequestFilter {
             tokenService.verify(token);
         } catch (Exception e) {
             ctx.abortWith(Response.status(Response.Status.UNAUTHORIZED)
-                .entity("Invalid App Check token")
+                .entity(new ErrorDto("Invalid App Check token"))
                 .build());
         }
     }
