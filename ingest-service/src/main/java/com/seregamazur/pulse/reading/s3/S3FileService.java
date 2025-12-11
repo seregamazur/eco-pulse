@@ -24,33 +24,37 @@ public class S3FileService {
     private S3AsyncClient s3;
 
     @ConfigProperty(name = "bucket.name")
-    String bucketName;
+    private String bucketName;
 
-    public CompletableFuture<List<String>> listCsvFiles() {
+    @ConfigProperty(name = "bucket.prefix.raw-news")
+    private String bucketPrefixRawNews;
+
+    @ConfigProperty(name = "bucket.prefix.enriched-news")
+    private String bucketPrefixEnrichedNews;
+
+    public CompletableFuture<List<String>> listRawNewsFiles() {
+        return listFilesByPrefix(bucketPrefixRawNews);
+    }
+
+    public CompletableFuture<List<String>> listEnrichedNewsFiles() {
+        return listFilesByPrefix(bucketPrefixEnrichedNews);
+    }
+
+    private CompletableFuture<List<String>> listFilesByPrefix(String bucketPrefixEnrichedNews) {
         var s3Request = ListObjectsV2Request.builder()
             .bucket(bucketName)
+            .prefix(bucketPrefixEnrichedNews)
             .build();
         S3AsyncObjectsCollector collector = new S3AsyncObjectsCollector();
         s3.listObjectsV2Paginator(s3Request).subscribe(collector);
 
-        return collector.future()
-            .thenApply(this::filterCsv).exceptionally(e -> {
-                log.error("Failed to get list of csv files from S3", e);
-                return null;
-            });
+        return collector.future().thenApply(f -> f.stream().map(S3Object::key).toList());
     }
 
     public CompletableFuture<ResponseBytes<GetObjectResponse>> downloadFile(String key) {
         return s3.getObject(
             GetObjectRequest.builder().bucket(bucketName).key(key).build(),
             AsyncResponseTransformer.toBytes());
-    }
-
-    private List<String> filterCsv(List<S3Object> s3Objects) {
-        return s3Objects.stream()
-            .map(S3Object::key)
-            .filter(o -> o.endsWith(".csv"))
-            .toList();
     }
 
 }

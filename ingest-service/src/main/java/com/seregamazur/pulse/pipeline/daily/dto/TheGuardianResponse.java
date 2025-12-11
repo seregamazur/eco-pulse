@@ -7,5 +7,6 @@ import com.seregamazur.pulse.pipeline.daily.GuardianResponseDeserializer;
 
 @JsonDeserialize(using = GuardianResponseDeserializer.class)
 public record TheGuardianResponse(
-        List<TheGuardianRawNews> results
-) {}
+    List<TheGuardianRawNews> results
+) {
+}

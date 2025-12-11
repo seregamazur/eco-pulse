@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
-import com.seregamazur.pulse.indexing.Processor;
+import com.seregamazur.pulse.indexing.NewsIndexingService;
+import com.seregamazur.pulse.indexing.model.EnrichedNewsDocument;
 import com.seregamazur.pulse.indexing.model.IndexResult;
-import com.seregamazur.pulse.reading.RawNewsCsvParser;
-import com.seregamazur.pulse.reading.model.RawNews;
+import com.seregamazur.pulse.reading.EnrichedNewsJsonMapper;
 import com.seregamazur.pulse.reading.s3.S3FileService;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -22,16 +22,15 @@ public class BackfillPipeline {
     private S3FileService s3;
 
     @Inject
-    private Processor processor;
+    private NewsIndexingService indexer;
 
     public CompletableFuture<List<IndexResult>> run(ExecutorService executor) {
-        return s3.listCsvFiles()
-            .thenCompose(files -> processFiles(files, executor));
+        return s3.listEnrichedNewsFiles().thenCompose(files -> processFiles(files, executor));
     }
 
     private CompletableFuture<List<IndexResult>> processFiles(List<String> files, ExecutorService executor) {
         List<CompletableFuture<List<IndexResult>>> tasks = files.stream()
-            .map(key -> processSingleFile(key, executor))
+            .map(key -> readAndIndexSingleNewsFile(key, executor))
             .toList();
 
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]))
@@ -42,17 +41,17 @@ public class BackfillPipeline {
             );
     }
 
-    private CompletableFuture<List<IndexResult>> processSingleFile(String key, ExecutorService executor) {
+    private CompletableFuture<List<IndexResult>> readAndIndexSingleNewsFile(String key, ExecutorService executor) {
         return s3.downloadFile(key)
             //parse csv in virtual threads
-            .thenApplyAsync(bytes -> RawNewsCsvParser.parseFromS3Object(key, bytes), executor)
+            .thenApplyAsync(bytes -> EnrichedNewsJsonMapper.readEnrichedNews(bytes.asByteArray()), executor)
             //enrich and index in virtual threads
-            .thenCompose(news -> processRawNews(news, executor));
+            .thenCompose(news -> indexDailyNews(news, key, executor));
     }
 
-    private CompletableFuture<List<IndexResult>> processRawNews(List<RawNews> news, ExecutorService executor) {
+    private CompletableFuture<List<IndexResult>> indexDailyNews(List<EnrichedNewsDocument> news, String day, ExecutorService executor) {
         List<CompletableFuture<IndexResult>> futureResult = news.stream()
-            .map(row -> CompletableFuture.supplyAsync(() -> processor.enrichAndIndex(row), executor))
+            .map(doc -> CompletableFuture.supplyAsync(() -> indexer.indexDocument(doc), executor))
             .toList();
 
         return CompletableFuture.allOf(futureResult.toArray(new CompletableFuture[0]))
@@ -61,8 +60,8 @@ public class BackfillPipeline {
                 .toList()
             )
             .exceptionally(e -> {
-                log.error("Failed to process news", e);
-                return null;
+                log.error("Failed to index news for day={}", day, e);
+                return List.of();
             });
     }
 }

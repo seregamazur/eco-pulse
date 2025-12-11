@@ -1,4 +1,4 @@
-package com.seregamazur.pulse.pipeline.daily;
+package com.seregamazur.pulse.pipeline.backfill;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -12,12 +12,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
-@QuarkusMain
+@QuarkusMain(name = "read-json-and-index")
 @ApplicationScoped
 @Slf4j
-public class DailyIndexerJob implements QuarkusApplication {
+public class BackfillIndexingJob implements QuarkusApplication {
     @Inject
-    private DailyPipeline pipeline;
+    private BackfillPipeline pipeline;
 
     @Override
     public int run(String... args) {
@@ -42,6 +42,6 @@ public class DailyIndexerJob implements QuarkusApplication {
     }
 
     public static void main(String... args) {
-        Quarkus.run(DailyIndexerJob.class, args);
+        Quarkus.run(BackfillIndexingJob.class, args);
     }
 }

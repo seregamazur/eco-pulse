@@ -18,61 +18,86 @@ quarkus:
 guardian:
   key: ${GUARDIAN_KEY}
 
+bucket:
+  name: ${BUCKET}
+  prefix:
+    raw-news: ${BUCKET_PREFIX_RAW}
+    enriched-news: ${BUCKET_PREFIX_ENRICHED}
+
 gpt:
   model: gpt-3.5-turbo
   max-tokens: 500
   key: ${GPT_KEY}
   prompt: |
-    You are an environmental news classifier. 
-    Analyze the article and return ONLY valid JSON with no explanations.
+    You are a strict environmental news classifier and JSON generator.
+    You MUST return ONLY a valid JSON object and NOTHING else.
+    ABSOLUTELY NO free text, explanations, or preambles outside the JSON block.
     
-    You MUST choose the most appropriate sentiment. 
-    Do NOT default to neutral unless the article truly contains no positive or negative environmental implications.
+    ###############################################
+    ### HARD ENUM CONSTRAINTS — DO NOT VIOLATE ###
+    ###############################################
+    The "topics" array MUST contain ONLY 1 or 2 elements selected EXACTLY from this list:
     
-    Sentiment rules:
-    - positive: sentimentScore between 0.02 and 1.0
-    - neutral: sentimentScore between -0.01 and 0.01
-    - negative: sentimentScore between -0.02 and -1.0
+    [
+      "CLIMATE_CHANGE", "RENEWABLE_ENERGY", "FOSSIL_FUELS", "AIR_POLLUTION",
+      "WATER_POLLUTION", "BIODIVERSITY_LAND", "WASTE_RECYCLING", "EXTREME_EVENTS",
+      "SOCIAL_RISKS", "PUBLIC_HEALTH", "FINES_SANCTIONS", "OTHER"
+    ]
+    
+    STRICT RULES:
+    - NEVER generate any topic not listed above.
+    - NEVER paraphrase or invent new topics.
+    - NEVER return lowercase topics.
+    - If the article does not match any category, choose "OTHER".
+    - Maximum 2 topics, minimum 1.
+    
+    Before outputting JSON: internally validate that all topics are from the allowed list.
+    
+    ###############################################
+    ### SENTIMENT RULES ###
+    ###############################################
+    Sentiment classification:
+    - POSITIVE: sentiment_score between 0.02 and 1.0
+    - NEUTRAL: sentiment_score between -0.01 and 0.01
+    - NEGATIVE: sentiment_score between -0.02 and -1.0
     
     Environmental cues:
-    - Wildfires, droughts, heatwaves, floods, pollution, biodiversity loss → NEGATIVE
-    - Renewable energy progress, climate agreements, environmental recovery → POSITIVE
+    - NEGATIVE → wildfires, droughts, floods, pollution, biodiversity loss
+    - POSITIVE → renewable progress, investments, environmental recovery
+    Do NOT default to NEUTRAL unless truly no impact.
     
-    Tone classification ENUM:
-    - SCIENTIFIC: factual, analytical, research-based
-    - ACTIVIST: calling for action, warnings, advocacy
-    - DESCRIPTIVE: Simple reporting of facts, no strong emotional or action tone.
+    ###############################################
+    ### TONE ENUM ###
+    ###############################################
+    "tone" MUST be one of:
+             - SCIENTIFIC → factual, analytical, research-based
+             - ACTIVIST → warnings, advocacy, calls to action
+             - DESCRIPTIVE → neutral reporting of events
     
-    Topic Classification ENUM (Choose 1 or 2 PRIMARY topics):
-    - CLIMATE_CHANGE
-    - RENEWABLE_ENERGY
-    - FOSSIL_FUELS
-    - AIR_POLLUTION
-    - WATER_POLLUTION
-    - BIODIVERSITY_LAND
-    - WASTE_RECYCLING
-    - EXTREME_EVENTS
-    - SOCIAL_RISKS (e.g., labor, community, justice issues)
-    - PUBLIC_HEALTH
-    - FINES_SANCTIONS
-    - OTHER
+    ###############################################
+    ### OUTPUT STRUCTURE ###
+    ###############################################
+    Return EXACTLY this JSON object shape:
     
-    Return JSON with this structure:
     {
-      "title": string,
-      "sentiment_label": "POSITIVE" or "NEGATIVE" or "NEUTRAL",
-      "sentiment_score": number,
-      "tone": "SCIENTIFIC" or "ACTIVIST" or "DESCRIPTIVE",
-      "topics": [Topic ENUM] // MUST be selected from the Topic Classification ENUM in UPPERCASE. Max 2 elements.
-      "organizations": [string],
-      "country": string,
-      "keywords": [string],
+      "title": string,                     // rewrite to 2–5 words about environmental impact
+      "sentiment_label": "POSITIVE" | "NEGATIVE" | "NEUTRAL",
+                           "sentiment_score": number,
+      "tone": "SCIENTIFIC" | "ACTIVIST" | "DESCRIPTIVE",
+                "topics": [Topic ENUM],              // 1–2 elements, only from allowed list
+      "organizations": [string],           // Title Case
+      "country": string,                   // ISO-3166-1 alpha-2, or "UN"
+      "keywords": [string],                // Title Case
       "summary": "1-2 sentences"
     }
     
-    Organizations and keywords should be Title Case. Country must be a valid ISO-3166-1 alpha-2 code. If no valid country can be determined, return "UN".
-    You MUST NOT return "", "UK", "EU", or any non-standard code.
-    Rewrite the news headline to be very short and concise, only 2–5 words about environment impact, maybe adding country. Remove authors and source.    
+    Rules:
+    - Organizations & keywords must be Title Case.
+    - Country MUST be ISO-3166-1 alpha-2. If unknown → "UN".
+    - NEVER output invalid codes like "UK", "EU", "USA", empty string, etc.
     
+    ###############################################
+    ### INPUT ###
+    ###############################################
     Article title: "%s"
     Article text: "%s"

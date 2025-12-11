@@ -1,5 +1,8 @@
 package com.seregamazur.pulse.indexing.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import lombok.Getter;
 
 @Getter
@@ -21,6 +24,24 @@ public enum Topic {
 
     Topic(String raw) {
         this.raw = raw;
+    }
+
+    /*
+    Even though our prompt as strict as possible, model can return something not from the enum
+     */
+    @JsonCreator
+    public static Topic fromString(String value) {
+        for (Topic t : Topic.values()) {
+            if (t.name().equalsIgnoreCase(value)) {
+                return t;
+            }
+        }
+        return OTHER;
+    }
+
+    @JsonValue
+    public String toValue() {
+        return this.name();
     }
 
 }

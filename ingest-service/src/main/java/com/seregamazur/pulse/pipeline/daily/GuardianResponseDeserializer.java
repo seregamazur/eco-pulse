@@ -29,12 +29,12 @@ public class GuardianResponseDeserializer extends JsonDeserializer<TheGuardianRe
             JsonNode fields = item.get("fields");
 
             String headline = fields != null && fields.has("headline")
-                    ? fields.get("headline").asText()
-                    : null;
+                ? fields.get("headline").asText()
+                : null;
 
             String body = fields != null && fields.has("body")
-                    ? fields.get("body").asText()
-                    : null;
+                ? fields.get("body").asText()
+                : null;
 
             list.add(new TheGuardianRawNews(headline, body));
         }

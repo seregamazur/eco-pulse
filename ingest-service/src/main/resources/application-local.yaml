@@ -12,5 +12,3 @@ quarkus:
     hosts: "localhost"
     protocol: "http"
     port: 9200
-bucket:
-  name: ${BUCKET}

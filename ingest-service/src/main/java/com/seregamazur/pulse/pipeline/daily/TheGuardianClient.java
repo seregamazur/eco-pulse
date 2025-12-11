@@ -20,12 +20,12 @@ public interface TheGuardianClient {
     @GET
     @Path("/search")
     CompletionStage<TheGuardianResponse> search(
-            @QueryParam("section") String section,
-            @QueryParam("from-date") LocalDate fromDate,
-            @QueryParam("to-date") LocalDate toDate,
-            @QueryParam("api-key") String apiKey,
-            @QueryParam("page-size") int pageSize,
-            @QueryParam("show-fields") String fields,
-            @QueryParam("tag") String tag
+        @QueryParam("section") String section,
+        @QueryParam("from-date") LocalDate fromDate,
+        @QueryParam("to-date") LocalDate toDate,
+        @QueryParam("api-key") String apiKey,
+        @QueryParam("page-size") int pageSize,
+        @QueryParam("show-fields") String fields,
+        @QueryParam("tag") String tag
     );
 }
