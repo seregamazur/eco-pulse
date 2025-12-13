@@ -11,7 +11,7 @@ quarkus:
           access-key-id: ${AWS_KEY}
           secret-access-key: ${AWS_SECRET}
   opensearch:
-    hosts: ${OPENSEARCH_HOST}
+    hosts: ${OPENSEARCH_HOST:localhost}
     protocol: https
     port: 443
 

@@ -1,7 +1,8 @@
 package com.seregamazur.pulse.reading;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -10,16 +11,14 @@ import com.seregamazur.pulse.indexing.model.EnrichedNewsDocument;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import lombok.experimental.UtilityClass;
 
 @ApplicationScoped
-@UtilityClass
 public final class EnrichedNewsJsonMapper {
 
     @Inject
     private ObjectMapper mapper;
 
-    public static List<EnrichedNewsDocument> readEnrichedNews(byte[] bytes) {
+    public List<EnrichedNewsDocument> readEnrichedNews(byte[] bytes) {
         try {
             return mapper.readValue(bytes, new TypeReference<>() {
             });
@@ -28,11 +27,18 @@ public final class EnrichedNewsJsonMapper {
         }
     }
 
-    public static void writeEnrichedToFile(List<EnrichedNewsDocument> doc) {
+    public void writeEnrichedToFile(List<EnrichedNewsDocument> doc) {
+
+        Path outputDir = Path.of("data", "enriched-final");
+        String fileName = doc.getFirst().getDate().toString() + ".json";
+        Path filePath = outputDir.resolve(fileName);
+
         try {
-            mapper.writeValue(new File("/data/enriched/" + doc.getFirst().getDate().toString() + ".json"), doc);
+            Files.createDirectories(filePath.getParent());
+
+            mapper.writeValue(filePath.toFile(), doc);
         } catch (IOException e) {
-            throw new RuntimeException("An exception occurred when trying to save EnrichedNews to JSON!", e);
+            throw new RuntimeException("An exception occurred when trying to write enriched data to file!", e);
         }
     }
 }

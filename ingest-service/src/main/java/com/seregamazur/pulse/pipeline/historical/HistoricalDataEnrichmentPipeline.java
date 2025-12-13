@@ -27,6 +27,12 @@ public class HistoricalDataEnrichmentPipeline {
     @Inject
     private NewsEnrichmentService enrichmentService;
 
+    @Inject
+    private RawNewsCsvParser csvParser;
+
+    @Inject
+    private EnrichedNewsJsonMapper jsonMapper;
+
     private final ExecutorService PARSE_CSV_EXECUTOR = Executors.newFixedThreadPool(100, Thread.ofVirtual().factory());
 
     //due to RPM/TPM of GPT limits
@@ -51,7 +57,7 @@ public class HistoricalDataEnrichmentPipeline {
     private CompletableFuture<Void> processSingleFile(String key, ExecutorService executor) {
         return s3.downloadFile(key)
             //parse csv in virtual threads
-            .thenApplyAsync(bytes -> RawNewsCsvParser.parseFromS3Object(key, bytes), executor)
+            .thenApplyAsync(bytes -> csvParser.parseFromS3Object(key, bytes), executor)
             //enrich and index in virtual threads
             .thenCompose(this::enrichAndSaveSingleFile);
     }
@@ -68,7 +74,7 @@ public class HistoricalDataEnrichmentPipeline {
                 .map(Optional::get)
                 .toList()
             )
-            .thenAcceptAsync(EnrichedNewsJsonMapper::writeEnrichedToFile);
+            .thenAcceptAsync(l -> jsonMapper.writeEnrichedToFile(l));
     }
 
 }

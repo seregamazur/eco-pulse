@@ -1,5 +1,6 @@
 package com.seregamazur.pulse.pipeline.backfill;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -24,8 +25,11 @@ public class BackfillPipeline {
     @Inject
     private NewsIndexingService indexer;
 
-    public CompletableFuture<List<IndexResult>> run(ExecutorService executor) {
-        return s3.listEnrichedNewsFiles().thenCompose(files -> processFiles(files, executor));
+    @Inject
+    private EnrichedNewsJsonMapper jsonMapper;
+
+    public CompletableFuture<List<IndexResult>> run(LocalDate after, ExecutorService executor) {
+        return s3.listEnrichedNewsFiles(after).thenCompose(files -> processFiles(files, executor));
     }
 
     private CompletableFuture<List<IndexResult>> processFiles(List<String> files, ExecutorService executor) {
@@ -44,7 +48,7 @@ public class BackfillPipeline {
     private CompletableFuture<List<IndexResult>> readAndIndexSingleNewsFile(String key, ExecutorService executor) {
         return s3.downloadFile(key)
             //parse csv in virtual threads
-            .thenApplyAsync(bytes -> EnrichedNewsJsonMapper.readEnrichedNews(bytes.asByteArray()), executor)
+            .thenApplyAsync(bytes -> jsonMapper.readEnrichedNews(bytes.asByteArray()), executor)
             //enrich and index in virtual threads
             .thenCompose(news -> indexDailyNews(news, key, executor));
     }

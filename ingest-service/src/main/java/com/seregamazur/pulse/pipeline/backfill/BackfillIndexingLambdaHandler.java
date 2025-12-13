@@ -3,27 +3,39 @@ package com.seregamazur.pulse.pipeline.backfill;
 import java.util.List;
 import java.util.concurrent.Executors;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.seregamazur.pulse.indexing.model.IndexResult;
 
-import io.quarkus.runtime.Quarkus;
-import io.quarkus.runtime.QuarkusApplication;
-import io.quarkus.runtime.annotations.QuarkusMain;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
-@QuarkusMain(name = "read-json-and-index")
-@ApplicationScoped
+/**
+ *
+ * curl usage:
+ * curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{"afterDate": "2025-11-01"}'
+ */
 @Slf4j
-public class BackfillIndexingJob implements QuarkusApplication {
+@ApplicationScoped
+@Named("backfill-lambda")
+public class BackfillIndexingLambdaHandler implements RequestHandler<BackfillLambdaInput, Integer> {
+
     @Inject
     private BackfillPipeline pipeline;
 
     @Override
-    public int run(String... args) {
+    public Integer handleRequest(BackfillLambdaInput input, Context context) {
         try (var executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory())) {
+
+            if (!input.isSentinelDate()) {
+                log.info("Starting backfill AFTER date: {}", input.afterDate());
+            } else {
+                log.info("Starting FULL backfill.");
+            }
             long start = System.currentTimeMillis();
-            List<IndexResult> results = pipeline.run(executor).join();
+            List<IndexResult> results = pipeline.run(input.afterDate(), executor).join();
             long end = System.currentTimeMillis();
 
             long successCount = results.stream().filter(IndexResult::success).count();
@@ -39,9 +51,5 @@ public class BackfillIndexingJob implements QuarkusApplication {
             }
         }
         return 0;
-    }
-
-    public static void main(String... args) {
-        Quarkus.run(BackfillIndexingJob.class, args);
     }
 }

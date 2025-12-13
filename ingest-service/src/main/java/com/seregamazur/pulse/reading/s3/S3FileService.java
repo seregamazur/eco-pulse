@@ -1,5 +1,6 @@
 package com.seregamazur.pulse.reading.s3;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,6 +24,9 @@ public class S3FileService {
     @Inject
     private S3AsyncClient s3;
 
+    @Inject
+    private S3KeyUtils s3KeyUtils;
+
     @ConfigProperty(name = "bucket.name")
     private String bucketName;
 
@@ -36,14 +40,17 @@ public class S3FileService {
         return listFilesByPrefix(bucketPrefixRawNews);
     }
 
-    public CompletableFuture<List<String>> listEnrichedNewsFiles() {
-        return listFilesByPrefix(bucketPrefixEnrichedNews);
+    public CompletableFuture<List<String>> listEnrichedNewsFiles(LocalDate after) {
+        return listFilesByPrefix(bucketPrefixEnrichedNews)
+            .thenApply(l -> l.stream()
+                .filter(key -> LocalDate.parse(s3KeyUtils.getBaseNameFromS3Key(key)).isAfter(after))
+                .toList());
     }
 
-    private CompletableFuture<List<String>> listFilesByPrefix(String bucketPrefixEnrichedNews) {
+    private CompletableFuture<List<String>> listFilesByPrefix(String bucketPrefix) {
         var s3Request = ListObjectsV2Request.builder()
             .bucket(bucketName)
-            .prefix(bucketPrefixEnrichedNews)
+            .prefix(bucketPrefix)
             .build();
         S3AsyncObjectsCollector collector = new S3AsyncObjectsCollector();
         s3.listObjectsV2Paginator(s3Request).subscribe(collector);
