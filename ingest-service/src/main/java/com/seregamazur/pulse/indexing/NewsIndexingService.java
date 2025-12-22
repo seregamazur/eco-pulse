@@ -1,5 +1,7 @@
 package com.seregamazur.pulse.indexing;
 
+import java.util.List;
+
 import com.seregamazur.pulse.indexing.model.EnrichedNewsDocument;
 import com.seregamazur.pulse.indexing.model.IndexResult;
 
@@ -21,6 +23,15 @@ public class NewsIndexingService {
         } catch (Exception e) {
             log.error("Error indexing: {}", doc.getTitle());
             return IndexResult.fail(doc.getTitle(), e);
+        }
+    }
+
+    public List<IndexResult> bulkIndexDocuments(List<EnrichedNewsDocument> doc) {
+        try {
+            return indexer.bulkIndex(doc);
+        } catch (Exception e) {
+            log.error("Unexpected exception while indexing batch");
+            throw new RuntimeException(e);
         }
     }
 }

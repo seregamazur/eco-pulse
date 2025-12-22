@@ -8,6 +8,7 @@ import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.seregamazur.pulse.reading.model.RawNews;
+import com.seregamazur.pulse.secret.SecretProvider;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -24,8 +25,7 @@ public class ChatGPTClient {
     private String prompt;
 
     @Inject
-    @ConfigProperty(name = "gpt.key")
-    private String key;
+    private SecretProvider secretProvider;
 
     @Inject
     @ConfigProperty(name = "gpt.model")
@@ -50,7 +50,7 @@ public class ChatGPTClient {
     @Produces
     OpenAIClient client() {
         return OpenAIOkHttpClient.builder()
-            .apiKey(key)
+            .apiKey(secretProvider.getGptApiKey())
             .build();
     }
 }

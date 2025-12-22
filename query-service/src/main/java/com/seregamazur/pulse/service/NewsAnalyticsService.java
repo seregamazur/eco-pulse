@@ -18,6 +18,7 @@ import org.opensearch.client.opensearch._types.aggregations.StringTermsBucket;
 import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.SearchResponse;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.seregamazur.pulse.dto.Period;
 import com.seregamazur.pulse.dto.geo.CountryNewsData;
 import com.seregamazur.pulse.dto.geo.GeoMapChart;
@@ -93,7 +94,7 @@ public class NewsAnalyticsService {
             .aggregations(AGG_TOPICS_BY_DATE, sub -> sub.terms(v -> v.field("topics"))))
             .build();
 
-        SearchResponse<JsonData> resp = searchExecutor.exec(req);
+        SearchResponse<ObjectNode> resp = searchExecutor.exec(req);
         var aggs = resp.aggregations();
 
         Map<LocalDate, List<TopicsOverTime>> result = Optional.ofNullable(aggs.get(AGG_BY_DATE).dateHistogram())
@@ -123,7 +124,7 @@ public class NewsAnalyticsService {
             .aggregations(AGG_TOPICS_BY_DATE, sub -> sub.terms(v -> v.field("topics")))
             .build();
 
-        SearchResponse<JsonData> resp = searchExecutor.exec(req);
+        SearchResponse<ObjectNode> resp = searchExecutor.exec(req);
         var aggs = resp.aggregations();
 
         return Optional.ofNullable(aggs.get(AGG_TOPICS_BY_DATE))
@@ -215,11 +216,11 @@ public class NewsAnalyticsService {
 
         return searchExecutor.exec(req).hits().hits().stream()
             .map(hit -> {
-                var json = hit.source().toJson().asJsonObject();
+                var json = hit.source();
 
-                String title = json.getString("title", "No Title Available");
-                String body = json.getString("summary", "No Summary Available");
-                String label = json.getString("sentiment_label", "No Sentiment Label Available");
+                String title = json.path("title").asText( "No Title Available");
+                String body = json.path("summary").asText("No Summary Available");
+                String label = json.path("sentiment_label").asText("No Sentiment Label Available");
 
                 return new TodayNews(title, body, label);
             })

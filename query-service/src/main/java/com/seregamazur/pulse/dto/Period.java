@@ -2,6 +2,9 @@ package com.seregamazur.pulse.dto;
 
 import org.opensearch.client.opensearch._types.aggregations.CalendarInterval;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public enum Period {
     DAY(CalendarInterval.Day),
     WEEK(CalendarInterval.Week),

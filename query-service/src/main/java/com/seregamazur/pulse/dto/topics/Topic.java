@@ -3,9 +3,11 @@ package com.seregamazur.pulse.dto.topics;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.Getter;
 
 @Getter
+@RegisterForReflection
 public enum Topic {
     CLIMATE_CHANGE("Climate Change"),
     RENEWABLE_ENERGY("Renewable Energy"),

@@ -2,6 +2,14 @@ package com.seregamazur.pulse.pipeline.daily;
 
 import org.jsoup.Jsoup;
 
+/**
+ * Utility class to extract plain text from an HTML string.
+ * <p>
+ * This is used to sanitize news content by removing all HTML tags and
+ * normalizing whitespace characters. It ensures the text is "clean"
+ * for downstream AI processing or indexing.
+ * </p>
+ */
 public class HtmlCleaner {
 
     public static String clean(String html) {

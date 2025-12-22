@@ -4,10 +4,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import com.seregamazur.pulse.reading.model.RawNews;
+import com.seregamazur.pulse.secret.SecretProvider;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -23,8 +23,7 @@ public class GuardianService {
     private static final int MAX_NEWS_COUNT_PER_DAY = 20;
 
     @Inject
-    @ConfigProperty(name = "guardian.key")
-    private String apiKey;
+    private SecretProvider secretProvider;
 
     @Inject
     private @RestClient TheGuardianClient client;
@@ -35,7 +34,7 @@ public class GuardianService {
                 SECTION,
                 yesterday,
                 yesterday,
-                apiKey,
+                secretProvider.getGuardianApiKey(),
                 MAX_NEWS_COUNT_PER_DAY,
                 FIELDS,
                 TAG

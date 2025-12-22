@@ -12,6 +12,11 @@
     <artifactId>query-service</artifactId>
 
     <dependencies>
+        <!-- Lambda -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-amazon-lambda-http</artifactId>
+        </dependency>
         <!-- Firebase JWT Auth-->
         <dependency>
             <groupId>io.quarkus</groupId>

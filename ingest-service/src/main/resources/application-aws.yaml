@@ -1,4 +1,6 @@
 quarkus:
+  aws:
+    enabled: true
   s3:
     devservices:
       enabled: false
@@ -10,8 +12,9 @@ quarkus:
         static-provider:
           access-key-id: ${AWS_KEY}
           secret-access-key: ${AWS_SECRET}
-  opensearch:
-    hosts: ${OPENSEARCH_HOST:localhost}
-    protocol: https
-    port: 443
+opensearch:
+  region: eu-central-1
+  hosts: ${OPENSEARCH_HOST:localhost}
+  protocol: https
+  port: 443
 

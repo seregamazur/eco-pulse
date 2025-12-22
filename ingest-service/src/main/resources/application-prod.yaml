@@ -1,0 +1,44 @@
+quarkus:
+  native:
+    resources:
+      includes:
+        - "META-INF/services/kotlin.**"
+      excludes:
+        # Stop Jackson from automatically scanning for modules via SPI.
+        # We register our modules manually in the ObjectMapper bean, so we
+        # don't want Jackson to fail when it finds a "ghost" service file.
+        - "META-INF/services/com.fasterxml.jackson.**"
+      runtime-initialized:
+        classes:
+          - org.opensearch.client.json.JsonpMapper
+          - org.opensearch.client.json.MetadataExtensions
+    additional-build-args:
+      - --initialize-at-run-time=com.openai.core.JsonNull,com.openai.core.JsonNull$Companion,com.openai.core.JsonMissing,com.openai.core.JsonMissing$Companion
+  s3:
+    async-client:
+      type: netty
+      max-concurrency: 300
+      connection-acquisition-timeout: 60s
+      connection-timeout: 10s
+      read-timeout: 30s
+    devservices:
+      enabled: false
+    path-style-access: false
+    aws:
+      region: eu-central-1
+opensearch:
+  aws:
+    region: eu-central-1
+    service: es
+  max-concurrency: 300
+  connection-acquisition-timeout: 60s
+  hosts: ${OPENSEARCH_HOST:NOT_SET}
+  port: 443
+
+secrets:
+  manager:
+    name: eco-pulse-secrets
+
+aws:
+  enabled: true
+  region: eu-central-1

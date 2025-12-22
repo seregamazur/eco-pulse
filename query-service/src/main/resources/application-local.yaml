@@ -3,10 +3,6 @@ quarkus:
     cors:
       enabled: true
       origins: "*"
-  opensearch:
-    hosts: "localhost"
-    protocol: "http"
-    port: 9200
   console:
     color: false
   log:
@@ -20,10 +16,13 @@ quarkus:
       "org.opensearch":
         level: DEBUG
 
-firebase:
-  project:
-    number: 522383639167
-  web:
-    appId: 1:522383639167:web:168e0cdc9b4f12206bb54a
-  appcheck:
-    jwks: https://firebaseappcheck.googleapis.com/v1/jwks
+opensearch:
+  aws:
+    region: "us-east-1"
+    service: "es"
+  max-concurrency: 300
+  connection-acquisition-timeout: 60s
+  hosts: "localhost"
+  port: 9200
+aws:
+  enabled: false

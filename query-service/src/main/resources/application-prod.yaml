@@ -1,0 +1,16 @@
+opensearch:
+  aws:
+    region: eu-central-1
+    service: es
+  max-concurrency: 300
+  connection-acquisition-timeout: 60s
+  hosts: ${OPENSEARCH_HOST:NOT_SET}
+  port: 443
+
+secrets:
+  manager:
+    name: eco-pulse-secrets
+
+aws:
+  enabled: true
+  region: eu-central-1

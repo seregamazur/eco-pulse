@@ -14,6 +14,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Transform ChatGPT Client JSON response into Enriched Document
+ */
 @Slf4j
 @ApplicationScoped
 public class NewsEnrichmentService {

@@ -1,6 +1,6 @@
 quarkus:
   fault-tolerance:
-    com.seregamazur.pulse.controller.DashboardController:
+    "[com.seregamazur.pulse.controller.DashboardController]":
       rate-limit:
         enabled: true
         value: 50

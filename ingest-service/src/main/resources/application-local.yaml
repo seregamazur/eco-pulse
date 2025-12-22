@@ -8,7 +8,13 @@ quarkus:
         static-provider:
           access-key-id: ${AWS_KEY}
           secret-access-key: ${AWS_SECRET}
-  opensearch:
-    hosts: "localhost"
-    protocol: "http"
-    port: 9200
+opensearch:
+  aws:
+    region: "us-east-1"
+    service: "es"
+  max-concurrency: 300
+  connection-acquisition-timeout: 60s
+  hosts: "localhost"
+  port: 9200
+aws:
+  enabled: false

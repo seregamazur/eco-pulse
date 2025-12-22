@@ -13,9 +13,28 @@ import jakarta.inject.Named;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- *
- * curl usage:
- * curl -X POST http://localhost:8080 -H "Content-Type: application/json" -d '{"afterDate": "2025-11-01"}'
+ * AWS Lambda handler responsible for orchestrating the news backfill process.
+ * <p>
+ * This handler triggers a pipeline that fetches enriched historical news data from S3 (JSON),
+ * and indexes the results into OpenSearch.
+ * It is optimized for high-throughput processing using Java Virtual Threads.
+ * </p>
+ * * <b>Key Features:</b>
+ * <ul>
+ * <li><b>Virtual Thread Executor:</b> Utilizes a structured task scope with a fixed pool
+ * of virtual threads to maximize concurrency without pinning platform threads.</li>
+ * <li><b>Flexible Ingestion:</b> Supports both partial backfills (after a specific date)
+ * and full historical re-indexing.</li>
+ * <li><b>Detailed Reporting:</b> Aggregates {@link IndexResult} to provide a summary
+ * of success/failure counts and logs specific document errors.</li>
+ * </ul>
+ * * <b>Usage:</b>
+ * The Lambda accepts a JSON input. For local testing:
+ * <pre>
+ * curl -X POST http://localhost:8080 \
+ * -H "Content-Type: application/json" \
+ * -d '{"afterDate": "2025-11-01"}'
+ * </pre>
  */
 @Slf4j
 @ApplicationScoped
@@ -27,15 +46,15 @@ public class BackfillIndexingLambdaHandler implements RequestHandler<BackfillLam
 
     @Override
     public Integer handleRequest(BackfillLambdaInput input, Context context) {
-        try (var executor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory())) {
+        try (var executor = Executors.newFixedThreadPool(200, Thread.ofVirtual().factory())) {
 
             if (!input.isSentinelDate()) {
-                log.info("Starting backfill AFTER date: {}", input.afterDate());
+                log.info("Starting backfill AFTER date: {}", input.getAfterDate());
             } else {
                 log.info("Starting FULL backfill.");
             }
             long start = System.currentTimeMillis();
-            List<IndexResult> results = pipeline.run(input.afterDate(), executor).join();
+            List<IndexResult> results = pipeline.run(input.getAfterDate(), executor).join();
             long end = System.currentTimeMillis();
 
             long successCount = results.stream().filter(IndexResult::success).count();
