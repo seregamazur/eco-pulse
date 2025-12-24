@@ -1,4 +1,7 @@
 quarkus:
+  #  Just for local start of historical
+  lambda:
+    handler: daily-lambda
   s3:
     endpoint-override: http://localhost:4566
     path-style-access: true

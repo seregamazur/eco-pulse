@@ -46,6 +46,14 @@ public final class EnrichedNewsJsonMapper {
         }
     }
 
+    public byte[] toBytes(List<EnrichedNewsDocument> documents) {
+        try {
+            return objectMapper().writeValueAsBytes(documents);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize documents to JSON", e);
+        }
+    }
+
     @Produces
     @Singleton
     public ObjectMapper objectMapper() {

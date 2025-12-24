@@ -3,6 +3,7 @@ package com.seregamazur.pulse.indexing;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.core.BulkRequest;
 import org.opensearch.client.opensearch.core.BulkResponse;
@@ -76,6 +77,7 @@ public class Indexer {
         IndexRequest<EnrichedNewsDocument> req = new IndexRequest.Builder<EnrichedNewsDocument>()
             .index("news")
             .document(doc)
+            .id(DigestUtils.md5Hex(doc.getTitle()))
             .build();
         try {
             client.index(req);
@@ -96,6 +98,7 @@ public class Indexer {
                 .index(idx -> idx
                     .index("news")
                     .document(doc)
+                    .id(DigestUtils.md5Hex(doc.getTitle()))
                 )
             );
         }

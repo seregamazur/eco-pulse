@@ -10,11 +10,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 /**
@@ -59,6 +62,7 @@ public class S3FileService {
      * <li>Files representing dates equal to or before the 'after' parameter.</li>
      * </ul>
      * </p>
+     *
      * @param after The threshold date; only files representing dates strictly after this are included.
      * @return A list of S3 keys representing relevant JSON files.
      */
@@ -98,6 +102,17 @@ public class S3FileService {
         return s3.getObject(
             GetObjectRequest.builder().bucket(bucketName).key(key).build(),
             AsyncResponseTransformer.toBytes());
+    }
+
+    public CompletableFuture<PutObjectResponse> uploadDailyNews(byte[] documents) {
+        return s3.putObject(
+            PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(bucketPrefixEnrichedNews + "/" + LocalDate.now() + ".json")
+                .contentType("application/json")
+                .build(),
+            AsyncRequestBody.fromBytes(documents)
+        );
     }
 
 }
