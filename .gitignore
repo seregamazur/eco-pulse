@@ -43,5 +43,5 @@ nb-configuration.xml
 /.quarkus/cli/plugins/
 # TLS Certificates
 .certs/
-data/
+util/
 TODO
