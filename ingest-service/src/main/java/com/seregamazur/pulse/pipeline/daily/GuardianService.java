@@ -49,6 +49,7 @@ public class GuardianService {
                         .map(r -> new RawNews(
                             r.headline(),
                             HtmlCleaner.clean(r.body()),
+                            r.webUrl(),
                             yesterday
                         ))
                         .toList();

@@ -27,6 +27,8 @@ public class EnrichedNewsDocument {
     private List<KeywordValue> organizations;
     private List<KeywordValue> keywords;
     private String summary;
+    @JsonProperty("web_url")
+    private String webUrl;
     @JsonProperty("ingest_date")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate ingestDate;

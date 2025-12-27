@@ -35,6 +35,7 @@ public class NewsEnrichmentService {
                 EnrichedNewsDocument.class);
             enrichedNewsDocument.setDate(raw.date());
             enrichedNewsDocument.setIngestDate(LocalDate.now());
+            enrichedNewsDocument.setWebUrl(raw.url());
             return Optional.of(enrichedNewsDocument);
         } catch (JsonProcessingException | BadRequestException e) {
             log.error("Failed to enrich news: {}", raw.title(), e);

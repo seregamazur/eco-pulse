@@ -221,8 +221,9 @@ public class NewsAnalyticsService {
                 String title = json.path("title").asText( "No Title Available");
                 String body = json.path("summary").asText("No Summary Available");
                 String label = json.path("sentiment_label").asText("No Sentiment Label Available");
+                String webUrl = json.path("web_url").asText("No Web URL Available");
 
-                return new TodayNews(title, body, label);
+                return new TodayNews(title, body, label, webUrl);
             })
             .collect(Collectors.toList());
     }

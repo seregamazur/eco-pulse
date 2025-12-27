@@ -26,6 +26,8 @@ public class GuardianResponseDeserializer extends JsonDeserializer<TheGuardianRe
         List<TheGuardianRawNews> list = new ArrayList<>();
 
         for (JsonNode item : resultsNode) {
+            String webUrl = item.has("webUrl") ? item.get("webUrl").asText() : null;
+
             JsonNode fields = item.get("fields");
 
             String headline = fields != null && fields.has("headline")
@@ -36,7 +38,7 @@ public class GuardianResponseDeserializer extends JsonDeserializer<TheGuardianRe
                 ? fields.get("body").asText()
                 : null;
 
-            list.add(new TheGuardianRawNews(headline, body));
+            list.add(new TheGuardianRawNews(headline, body, webUrl));
         }
 
         return new TheGuardianResponse(list);

@@ -40,8 +40,9 @@ public class RawNewsCsvParser {
         for (CSVRecord record : parser) {
             String title = record.get("Title");
             String text = record.get("Article Text");
+            String url = record.get("Web URL");
             LocalDate date = LocalDate.parse(s3KeyUtils.getBaseNameFromS3Key(s3ObjectName));
-            news.add(new RawNews(title, text, date));
+            news.add(new RawNews(title, text, url, date));
         }
         return news;
     }

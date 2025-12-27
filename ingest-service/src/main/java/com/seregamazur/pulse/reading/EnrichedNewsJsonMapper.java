@@ -33,7 +33,7 @@ public final class EnrichedNewsJsonMapper {
 
     public void writeEnrichedToFile(List<EnrichedNewsDocument> doc) {
 
-        Path outputDir = Path.of("data", "enriched-final");
+        Path outputDir = Path.of("util", "enriched-final");
         String fileName = doc.getFirst().getDate().toString() + ".json";
         Path filePath = outputDir.resolve(fileName);
 

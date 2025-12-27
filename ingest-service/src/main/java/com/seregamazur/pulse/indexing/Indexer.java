@@ -53,6 +53,7 @@ public class Indexer {
                     .properties("country", p -> p.keyword(k -> k))
                     .properties("sentiment_score", p -> p.float_(n -> n))
                     .properties("summary", p -> p.text(t -> t))
+                    .properties("web_url", p -> p.text(t -> t))
                     .properties("topics", p -> p.keyword(k -> k))
                     .properties("organizations", p -> p
                         .nested(n -> n
